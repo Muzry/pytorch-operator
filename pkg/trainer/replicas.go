@@ -153,14 +153,16 @@ func (s *PyTorchReplicaSet) CreatePodWithIndex(index int32, worldSize int32) (*v
 	taskLabels := s.Labels()
 	taskLabels["task_index"] = fmt.Sprintf("%v", index)
 
+	metadata:= s.Spec.Template.ObjectMeta.DeepCopy()
+	metadata.Name = s.genPodName(index)
+	metadata.Labels = taskLabels
+	metadata.OwnerReferences = []meta_v1.OwnerReference{
+		helper.AsOwner(s.Job.job),
+	}
+
 	pod := &v1.Pod{
-		ObjectMeta: meta_v1.ObjectMeta{
-			Name:   s.genPodName(index),
-			Labels: taskLabels,
-			OwnerReferences: []meta_v1.OwnerReference{
-				helper.AsOwner(s.Job.job),
-			},
-		},
+
+		ObjectMeta: *metadata,
 		Spec: *s.Spec.Template.Spec.DeepCopy(),
 	}
 
